@@ -1,0 +1,121 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "version": "1.0.0",
+    "title": "API Library PT Eigen",
+    "description": "API for managing a library system"
+  },
+  "host": "localhost:3000/api",
+  "basePath": "/",
+  "tags": [
+    {
+      "name": "Library",
+      "description": "Library management"
+    }
+  ],
+  "schemes": [
+    "http"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/books": {
+      "get": {
+        "tags": ["Library"],
+        "summary": "Get all books",
+        "description": "Get details of all books",
+        "responses": {
+          "200": {
+            "description": "Successful"
+          }
+        }
+      }
+    },
+    "/members": {
+      "get": {
+        "tags": ["Library"],
+        "summary": "Get all members",
+        "description": "Get details of all members",
+        "responses": {
+          "200": {
+            "description": "Successful"
+          }
+        }
+      }
+    },
+    "/borrow": {
+      "post": {
+        "tags": ["Library"],
+        "summary": "Borrow a book",
+        "description": "Member borrows a book",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Member borrows a book",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/BorrowRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful"
+          }
+        }
+      }
+    },
+    "/return": {
+      "post": {
+        "tags": ["Library"],
+        "summary": "Return a book",
+        "description": "Member returns a book",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Member returns a book",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ReturnRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "BorrowRequest": {
+      "type": "object",
+      "properties": {
+        "memberCode": {
+          "type": "string"
+        },
+        "bookCode": {
+          "type": "string"
+        }
+      }
+    },
+    "ReturnRequest": {
+      "type": "object",
+      "properties": {
+        "memberCode": {
+          "type": "string"
+        },
+        "bookCode": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
