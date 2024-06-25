@@ -4,7 +4,7 @@ const {json} = require("express");
 
 // Get All Books
 exports.getAllBooks = (req, res) => {
-    db.all('SELECT * FROM books WHERE stocks > 0', [], (err, rows) => {
+    db.all('SELECT * FROM books WHERE stock > 0', [], (err, rows) => {
         if (err) {
             res.status(500).json({ error: err.message });
             return
@@ -50,7 +50,7 @@ exports.borrowBook = (req, res) => {
                 return
             }
 
-            // Check stock of books
+            // Check stock of book
             db.get('SELECT stock FROM books WHERE code = ?', [bookCode], (err, book) => {
                 if (err) {
                     res.status(500).json({ error: err.message })
@@ -70,30 +70,81 @@ exports.borrowBook = (req, res) => {
 }
 
 // Return Book
+// exports.returnBook = (req, res) => {
+//     const { memberCode, bookCode } = req.body;
+//
+//     // Check Borrows
+//     db.get('SELECT borrowDate FROM borrows WHERE memberCode = ? AND bookCode = ? AND returnDate IS NULL', [memberCode, bookCode], (err, borrow) => {
+//         if (err) {
+//             res.status(500).json({ error: err.message })
+//             return;
+//         }
+//         if (!borrow) {
+//             res.status(400).json({ error: "Book is not borrowed by the member" })
+//             return;
+//         }
+//
+//         // Return the book and check the penalty
+//         db.run('UPDATE borrows SET returnDate = ? WHERE memberCode = ? AND bookCode = ?', [moment().format('YYYY-MM-DD'), memberCode, bookCode])
+//         db.run('UPDATE books SET stock = stock + 1 WHERE code = ?', [bookCode])
+//
+//         if (moment().diff(moment(borrow.borrowDate), 'days') > 7) {
+//             const penaltyEndDate = moment().add(3, 'days').format('YYYY-MM-DD')
+//             db.run('UPDATE members SET penaltyEndDate = ? WHERE code = ?', [penaltyEndDate, memberCode])
+//             res.json({ message: "Book returned successfully, member is penalized" });
+//         } else {
+//             res.json({ message: "Book returned successfully" })
+//         }
+//     })
+// }
+
 exports.returnBook = (req, res) => {
     const { memberCode, bookCode } = req.body;
 
     // Check Borrows
-    db.get('SELECT borrowDate FROM borrows WHERE memberCode = ? AND bookCode = ? AND returnDate IS NULL', [memberCode, bookCode], (err, rows) => {
+    db.get('SELECT borrowDate FROM borrows WHERE memberCode = ? AND bookCode = ? AND returnDate IS NULL', [memberCode, bookCode], (err, borrow) => {
         if (err) {
-            res.status(500).json({ error: err.message })
-            return
+            res.status(500).json({ error: err.message });
+            return;
         }
         if (!borrow) {
-            res.status(400).json({ error: "Book is not borrowed by the member" })
-            return
+            res.status(400).json({ error: "Book is not borrowed by the member" });
+            return;
         }
+
+        // Log borrow date for debugging
+        console.log(`Borrow date: ${borrow.borrowDate}`);
 
         // Return the book and check the penalty
-        db.run('UPDATE borrows SET returnDate = ? WHERE memberCode = ? AND bookCode = ?', [moment().format('YYYY-MM-DD'), memberCode, bookCode])
-        db.run('UPDATE books SET stock = stock + 1 WHERE code = ?', [bookCode])
+        db.run('UPDATE borrows SET returnDate = ? WHERE memberCode = ? AND bookCode = ?', [moment().format('YYYY-MM-DD'), memberCode, bookCode], function (err) {
+            if (err) {
+                res.status(500).json({ error: err.message });
+                return;
+            }
 
-        if (moment().diff(moment(borrow.borrowDate), 'days') > 7) {
-            const penaltyEndDate = moment().add(3, 'days').format('YYYY-MM-DD')
-            db.run('UPDATE members SET penaltyEndDate = ? WHERE code = ?', [penaltyEndDate, memberCode])
-            res.json({ message: "Book returned successfully, member is penalized" });
-        } else {
-            res.json({ message: "Book returned successfully" })
-        }
-    })
-}
+            db.run('UPDATE books SET stock = stock + 1 WHERE code = ?', [bookCode], function (err) {
+                if (err) {
+                    res.status(500).json({ error: err.message });
+                    return;
+                }
+
+                const daysBorrowed = moment().diff(moment(borrow.borrowDate), 'days');
+                console.log(`Days borrowed: ${daysBorrowed}`);
+
+                if (daysBorrowed > 7) {
+                    const penaltyEndDate = moment().add(3, 'days').format('YYYY-MM-DD');
+                    db.run('UPDATE members SET penaltyEndDate = ? WHERE code = ?', [penaltyEndDate, memberCode], function (err) {
+                        if (err) {
+                            res.status(500).json({ error: err.message });
+                            return;
+                        }
+                        console.log(`Penalty applied: ${penaltyEndDate}`);
+                        res.json({ message: "Book returned successfully, member is penalized" });
+                    });
+                } else {
+                    res.json({ message: "Book returned successfully" });
+                }
+            });
+        });
+    });
+};
