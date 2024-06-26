@@ -31,7 +31,7 @@ http://localhost:3000/api-docs/#/
     print(terpanjang(kalimat))
     ```
 3. Count_kejadian (Python)
-   ```
+   ```python
    def count_kejadian(input_list, query_list):
     return [input_list.count(query) for query in query_list]
     
